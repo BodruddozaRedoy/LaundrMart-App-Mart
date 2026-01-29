@@ -1,192 +1,254 @@
 import HeaderBackButton from "@/components/common/HeaderBackButton";
+import ScreenWrapper from "@/components/common/ScreenWrapper";
 import PrimaryButton from "@/components/shared/PrimaryButton";
+import { useToast } from "@/components/ui/toast/ToastContext";
+import { useUser } from "@/hooks/useUser";
 import { Ionicons } from "@expo/vector-icons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Octicons from "@expo/vector-icons/Octicons";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import React, { useState } from "react";
-import {
-    Dimensions,
-    Image,
-    KeyboardAvoidingView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useCallback, useEffect, useState } from "react";
+import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 
-// 📌 Tablet detection
-const { width } = Dimensions.get("window");
-const isMd = width >= 768;
-const isLg = width >= 1024;
+const PersonalInfoScreen = () => {
+    const {
+        customerProfile,
+        updateProfile,
+        updateProfileState,
+        refetchProfile,
+        isProfileFetching,
+    } = useUser();
 
-// 📌 Icon scaling
-const iconSize = isLg ? 40 : isMd ? 28 : 20;
+    const { success, error } = useToast();
 
-const LaundryInfoScreen = () => {
-    const [showTooltip, setShowTooltip] = useState(true);
+    // ---------------- STATES ----------------
+    const [fullName, setFullName] = useState("");
+    const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
+    const [location, setLocation] = useState<null | {
+        street_address: string[];
+        city: string;
+        state: string;
+        zip_code?: string;
+        country: string;
+    }>(null);
+
+
+    const [image, setImage] = useState<null | {
+        uri: string;
+        name: string;
+        type: string;
+    }>(null);
+
+    // ---------------- PREFILL ----------------
+    useEffect(() => {
+        if (customerProfile) {
+            setFullName(customerProfile.full_name || "");
+            setEmail(customerProfile.email || "");
+            setPhone(customerProfile.phone_number || "");
+
+            if (customerProfile.location) {
+                const parsed = JSON.parse(customerProfile.location);
+                setLocation(parsed);
+            }
+        }
+    }, [customerProfile]);
+
+
+    console.log("customerProfile", customerProfile);
+
+    // ---------------- IMAGE PICKER ----------------
+    const pickImage = async (fromCamera = false) => {
+        try {
+            const permission = fromCamera
+                ? await ImagePicker.requestCameraPermissionsAsync()
+                : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+            if (!permission.granted) {
+                error("Permission denied", "Please allow access");
+                return;
+            }
+
+            const result = fromCamera
+                ? await ImagePicker.launchCameraAsync({ quality: 0.7 })
+                : await ImagePicker.launchImageLibraryAsync({ quality: 0.7 });
+
+            if (!result.canceled) {
+                const asset = result.assets[0];
+                setImage({
+                    uri: asset.uri,
+                    name: `profile_${Date.now()}.jpg`,
+                    type: "image/jpeg",
+                });
+            }
+        } catch (err) {
+            error("Image Error", "Failed to pick image");
+        }
+    };
+
+    // ---------------- UPDATE PROFILE ----------------
+    const handleUpdate = async () => {
+        try {
+            const formData = new FormData();
+
+            if (fullName.trim()) formData.append("full_name", fullName);
+            if (email.trim()) formData.append("email", email);
+            if (phone.trim()) formData.append("phone_number", phone);
+            if (location) {
+                formData.append("location", JSON.stringify(location));
+            }
+
+
+
+            if (image) {
+                formData.append("image", {
+                    uri: image.uri,
+                    name: image.name,
+                    type: image.type,
+                } as any);
+            }
+            console.log("formData", formData);
+
+            await updateProfile(formData);
+            success("Profile Updated", "Your profile has been updated successfully");
+        } catch (err: any) {
+            error("Update Failed", "Profile update failed");
+            console.log(err?.response?.data);
+        }
+    };
+
+    const onRefresh = useCallback(async () => {
+        try {
+            await refetchProfile();
+            success("Updated", "Latest profile data loaded");
+        } catch (e) {
+            error("Refresh failed", "Could not fetch latest data");
+        }
+    }, []);
 
     return (
-        <SafeAreaView className="flex-1 bg-white">
-            <TouchableWithoutFeedback onPress={() => setShowTooltip(false)}>
-                <KeyboardAvoidingView
-                    behavior="padding"
-                    className="flex-1 bg-white px-5 pt-5 md:px-10 lg:px-16 md:pt-10 lg:pt-14"
-                >
-                    {/* Header */}
-                    <View className="flex-row items-center mb-6 md:mb-10 lg:mb-12">
-                        <HeaderBackButton onPress={() => router.push("/(mart)/(tab)/more")} />
-                        <Text className="flex-1 text-center text-lg md:text-3xl lg:text-4xl font-semibold text-gray-800">
-                            Laundry Info
-                        </Text>
-                    </View>
+        <ScreenWrapper
+            scrollable
+            keyboardAvoiding
+            loading={updateProfileState.isPending}
+            refreshing={isProfileFetching}
+            onRefresh={onRefresh}
+        >
+            {/* Header */}
+            <View className="flex-row items-center mb-6 mt-4">
+                <HeaderBackButton
+                    onPress={() => router.push("/(mart)/(tab)/more")}
+                />
+                <Text className="flex-1 text-center text-lg font-semibold text-gray-800">
+                    Personal Info
+                </Text>
+            </View>
 
-                    {/* Profile Image */}
-                    <View className="items-center mb-6 md:mb-10 lg:mb-12">
-                        <View className="relative">
-                            <Image
-                                source={{
-                                    uri: "https://t4.ftcdn.net/jpg/00/91/13/83/360_F_91138343_2rGUY65Ew7OAkYZ12sltkN0e1ngO9Vx2.jpg",
-                                }}
-                                style={{
-                                    width: isLg ? 130 : isMd ? 110 : 96,
-                                    height: isLg ? 130 : isMd ? 110 : 96,
-                                }}
-                                className="rounded-full"
-                            />
-
-                            <TouchableOpacity
-                                className="absolute bottom-0 right-0 bg-gray-100 rounded-full"
-                                style={{
-                                    padding: isLg ? 10 : isMd ? 8 : 6,
-                                }}
-                            >
-                                <Ionicons
-                                    name="camera"
-                                    size={isLg ? 26 : isMd ? 22 : 16}
-                                    color="black"
-                                />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    {/* Name */}
-                    <View className="mb-7 md:mb-10 lg:mb-12">
-                        <Text className="text-sm md:text-xl lg:text-2xl text-gray-700 mb-1 md:mb-2">
-                            Laundry Mart Name
-                        </Text>
-                        <TextInput
-                            placeholder="Type here..."
-                            className="
-                                border border-gray-200 rounded-xl px-4 py-3 
-                                text-base md:text-2xl lg:text-3xl
-                                md:py-5 lg:py-6
-                            "
-                            onFocus={() => setShowTooltip(false)}
-                        />
-                    </View>
-
-                    {/* Phone Number */}
-                    <View className="mb-7 md:mb-10 lg:mb-12">
-                        <Text className="text-sm md:text-xl lg:text-2xl text-gray-700 mb-1 md:mb-2">
-                            Phone number
-                        </Text>
-
-                        <View
-                            className="
-                                flex-row items-center border border-gray-200 rounded-xl 
-                                px-4 py-3 md:px-6 md:py-5 lg:px-8 lg:py-6
-                            "
-                        >
-                            <Text className="text-gray-700 flex-1 text-base md:text-2xl lg:text-3xl">
-                                +880 1757976790
-                            </Text>
-
-                            <MaterialIcons
-                                name="verified"
-                                size={isLg ? 34 : isMd ? 26 : 20}
-                                color="green"
-                            />
-                        </View>
-                    </View>
-
-                    {/* Email */}
-                    <View className="mb-7 md:mb-10 lg:mb-12 relative">
-                        <Text className="text-sm md:text-xl lg:text-2xl text-gray-700 mb-1 md:mb-2">
-                            Email
-                        </Text>
-
-                        <View
-                            className="
-                                flex-row items-center border border-red-300 bg-red-50 
-                                rounded-xl px-4 py-3 
-                                md:px-6 md:py-5 lg:px-8 lg:py-6
-                            "
-                        >
-                            <Text className="text-gray-700 flex-1 text-base md:text-2xl lg:text-3xl">
-                                bodruddozaredoy@gmail.com
-                            </Text>
-
-                            <TouchableOpacity onPress={() => router.push("/more/verification")}>
-                                <Octicons
-                                    name="verified"
-                                    size={isLg ? 32 : isMd ? 24 : 18}
-                                    color="red"
-                                />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    {/* Location */}
-                    <View className="mb-8 md:mb-12 lg:mb-14">
-                        <Text className="text-sm md:text-xl lg:text-2xl text-gray-700 mb-1 md:mb-2">
-                            Location
-                        </Text>
-
-                        <View
-                            className="
-                                flex-row items-center border border-gray-200 rounded-xl 
-                                px-4 py-3 md:px-6 md:py-5 lg:px-8 lg:py-6
-                            "
-                        >
-                            <Text className="flex-1 text-gray-700 text-base md:text-2xl lg:text-3xl">
-                                Amberkhana, Sylhet, Bangladesh
-                            </Text>
-                            <Ionicons
-                                name="location-outline"
-                                size={isLg ? 34 : isMd ? 26 : 18}
-                                color="#007AFF"
-                            />
-                        </View>
-                    </View>
-
-                    {/* Pricing information */}
-                    <Text className="text-xl font-semibold text-primary mb-3">Pricing Information</Text>
-                    <View className="mb-7 md:mb-10 lg:mb-12">
-                        <Text className="text-sm md:text-xl lg:text-2xl text-gray-700 mb-1 md:mb-2">
-                            Price per pound
-                        </Text>
-                        <TextInput
-                            placeholder="Type here..."
-                            className="
-                                border border-gray-200 rounded-xl px-4 py-3 
-                                text-base md:text-2xl lg:text-3xl
-                                md:py-5 lg:py-6
-                            "
-                            onFocus={() => setShowTooltip(false)}
-                        />
-                    </View>
-
-                    {/* Update Button */}
-                    <TouchableOpacity className="w-full mb-10 md:mb-14 lg:mb-16">
-                        <PrimaryButton text="Update Profile" />
+            {/* Profile Image */}
+            <View className="items-center mb-6">
+                <View className="relative">
+                    <Image
+                        source={{
+                            uri:
+                                image?.uri ||
+                                customerProfile?.image ||
+                                "https://img.icons8.com/?size=100&id=7819&format=png",
+                        }}
+                        className="w-24 h-24 rounded-full"
+                    />
+                    <TouchableOpacity
+                        onPress={() => pickImage(false)}
+                        onLongPress={() => pickImage(true)}
+                        className="absolute bottom-0 right-0 bg-gray-100 p-1.5 rounded-full"
+                    >
+                        <Ionicons name="camera" size={16} color="black" />
                     </TouchableOpacity>
-                </KeyboardAvoidingView>
-            </TouchableWithoutFeedback>
-        </SafeAreaView>
+                </View>
+            </View>
+
+            {/* Name */}
+            <View className="mb-7">
+                <Text className="text-sm text-gray-700 mb-1">Name</Text>
+                <TextInput
+                    value={fullName}
+                    onChangeText={setFullName}
+                    placeholder="Type here..."
+                    className="border border-gray-200 rounded-xl px-4 py-3 text-base"
+                />
+            </View>
+
+            {/* Phone */}
+            <View className="mb-7">
+                <Text className="text-sm text-gray-700 mb-1">Phone number</Text>
+                <TextInput
+                    value={phone}
+                    onChangeText={setPhone}
+                    keyboardType="phone-pad"
+                    className="border border-gray-200 rounded-xl px-4 py-3"
+                />
+            </View>
+
+            {/* Email */}
+            <View className="mb-7">
+                <Text className="text-sm text-gray-700 mb-1">Email</Text>
+                <View className="flex-row items-center border border-gray-200 rounded-xl px-4 py-3">
+                    <TextInput
+                        value={email}
+                        onChangeText={setEmail}
+                        readOnly
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                        className="flex-1"
+                    />
+                    {customerProfile?.is_verified ? (
+                        <MaterialIcons name="verified" size={22} color="green" />
+                    ) : (
+                        <Octicons name="verified" size={22} color="red" />
+                    )}
+                </View>
+            </View>
+
+            {/* Location */}
+            <View className="mb-8">
+                <Text className="text-sm text-gray-700 mb-1">Location</Text>
+                <View className="flex-row items-center border border-gray-200 rounded-xl px-4 py-3">
+                    <TextInput
+                        value={
+                            location
+                                ? `${location.street_address.join(" ")}, ${location.city}, ${location.state}, ${location.country}`
+                                : ""
+                        }
+                        editable={false}
+                        placeholder="Your location"
+                        className="flex-1 text-gray-700"
+                    />
+
+                    <TouchableOpacity
+                        onPress={() =>
+                            router.push({
+                                pathname: "/(mart)/order/addNewAddress",
+                                params: { type: "Home", path: "profile" },
+                            })
+                        }
+                        className="bg-gray-100 px-3 py-2 rounded-lg"
+                    >
+                        <Ionicons name="create-outline" size={18} color="#017FC6" />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            {/* Update Button */}
+            <TouchableOpacity
+                onPress={handleUpdate}
+                disabled={updateProfileState.isPending}
+            >
+                <PrimaryButton
+                    text={updateProfileState.isPending ? "Updating..." : "Update Profile"}
+                />
+            </TouchableOpacity>
+        </ScreenWrapper>
     );
 };
 
-export default LaundryInfoScreen;
+export default PersonalInfoScreen;
