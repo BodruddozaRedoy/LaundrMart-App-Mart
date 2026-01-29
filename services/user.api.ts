@@ -12,14 +12,14 @@ import {
 } from "@/types/user.types";
 
 export const registerUser = async (
-  payload: RegisterPayload
+  payload: RegisterPayload,
 ): Promise<AuthResponse> => {
   const { data } = await api.post("/accounts/api/register", payload);
   return data;
 };
 
 export const loginUser = async (
-  payload: LoginPayload
+  payload: LoginPayload,
 ): Promise<AuthResponse> => {
   const { data } = await api.post("/accounts/api/login", payload);
   return data;
@@ -31,14 +31,14 @@ export const getCustomerProfile = async (): Promise<CustomerProfile> => {
 };
 
 export const forgotPassword = async (
-  payload: ForgotPasswordPayload
+  payload: ForgotPasswordPayload,
 ): Promise<AuthResponse> => {
   const { data } = await api.post("/accounts/api/forget-password", payload);
   return data;
 };
 
 export const resetPassword = async (
-  payload: ResetPasswordPayload
+  payload: ResetPasswordPayload,
 ): Promise<AuthResponse> => {
   const { data } = await api.post("/auth/reset-password", payload);
   return data;
@@ -50,14 +50,14 @@ export const verifyOtp = async (payload: VerifyOtpPayload) => {
 };
 
 export const resendOtp = async (
-  payload: ResendOtpPayload
+  payload: ResendOtpPayload,
 ): Promise<AuthResponse> => {
   const { data } = await api.post("/accounts/api/resend-otp", payload);
   return data;
 };
 
 export const setNewPassword = async (
-  payload: SetPasswordPayload
+  payload: SetPasswordPayload,
 ): Promise<AuthResponse> => {
   const { data } = await api.patch("/accounts/api/change-password", payload, {
     headers: {
@@ -69,7 +69,7 @@ export const setNewPassword = async (
 };
 
 export const updateCustomerProfileForm = async (
-  payload: FormData
+  payload: FormData,
 ): Promise<CustomerProfile> => {
   const { data } = await api.patch("/accounts/api/customer-profile", payload, {
     headers: {

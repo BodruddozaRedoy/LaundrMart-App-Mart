@@ -1,23 +1,25 @@
-import HeaderBackButton from '@/components/common/HeaderBackButton';
-import { useToast } from '@/components/ui/toast/ToastContext';
-import { images } from '@/constants';
-import { useUser } from '@/hooks/useUser';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React, { useState } from 'react';
+import HeaderBackButton from "@/components/common/HeaderBackButton";
+import SocialAuth from "@/components/module/auth/SocialAuth";
+import { useToast } from "@/components/ui/toast/ToastContext";
+import { images } from "@/constants";
+import { useUser } from "@/hooks/useUser";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React, { useState } from "react";
 import {
     Image,
     Keyboard,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
+    StatusBar,
     Text,
     TextInput,
     TouchableOpacity,
     TouchableWithoutFeedback,
     View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type Errors = {
     identifier?: string;
@@ -27,9 +29,9 @@ type Errors = {
 };
 
 const SignUpScreen = () => {
-    const [identifier, setIdentifier] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [identifier, setIdentifier] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [agreeTerms, setAgreeTerms] = useState(false);
@@ -42,16 +44,16 @@ const SignUpScreen = () => {
     const validate = () => {
         const e: Errors = {};
 
-        if (!identifier) e.identifier = 'Email or phone is required';
-        if (!password) e.password = 'Password is required';
+        if (!identifier) e.identifier = "Email or phone is required";
+        if (!password) e.password = "Password is required";
         else if (password.length < 8)
-            e.password = 'Password must be at least 8 characters';
+            e.password = "Password must be at least 8 characters";
 
-        if (!confirmPassword) e.confirmPassword = 'Confirm your password';
+        if (!confirmPassword) e.confirmPassword = "Confirm your password";
         else if (password !== confirmPassword)
-            e.confirmPassword = 'Passwords do not match';
+            e.confirmPassword = "Passwords do not match";
 
-        if (!agreeTerms) e.terms = 'You must accept terms & conditions';
+        if (!agreeTerms) e.terms = "You must accept terms & conditions";
 
         setErrors(e);
         return Object.keys(e).length === 0;
@@ -62,43 +64,47 @@ const SignUpScreen = () => {
         if (!validate()) return;
 
         const payload = {
-            role: 'Customer' as const,
+            role: "Customer" as const,
             password,
-            ...(identifier.includes('@')
+            ...(identifier.includes("@")
                 ? { email: identifier }
                 : { phone_number: identifier }),
         };
-        console.log(payload)
+        console.log(payload);
 
         try {
             const res = await register(payload);
-            success('Account Created', res.message);
-            router.replace({ pathname: '/(auth)/verify', params: { email: identifier } });
+            success("Account Created", res.message);
+            router.replace({
+                pathname: "/(auth)/verify",
+                params: { email: identifier },
+            });
         } catch (err: any) {
-            console.log(err)
+            console.log(err);
             error(
-                'Signup Failed',
-                err?.response?.data?.message || 'Something went wrong'
+                "Signup Failed",
+                err?.response?.data?.message || "Something went wrong",
             );
         }
     };
 
     /* -------------------- UI -------------------- */
     return (
-        <SafeAreaView>
+        <SafeAreaView className="flex-1 bg-white">
             <KeyboardAvoidingView
                 // FIX: 'padding' is standard for iOS, Android usually handles 'height' or nothing better
-                behavior={'padding'}
+                behavior={"padding"}
                 // className="flex-1 bg-white"
                 // FIX: Offset accounts for the status bar/header height so the keyboard doesn't cover the input
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 70}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 70}
             >
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <ScrollView
                         contentContainerStyle={{
-                            alignItems: 'center',
+                            alignItems: "center",
                             padding: 20,
-                            flexGrow: 1
+                            flexGrow: 1,
+                            backgroundColor: "white",
                         }}
                         showsVerticalScrollIndicator={false}
                         keyboardShouldPersistTaps="handled"
@@ -108,14 +114,24 @@ const SignUpScreen = () => {
                             <HeaderBackButton onPress={() => router.back()} />
                             <View />
                         </View>
+                        <StatusBar
+                            backgroundColor={"transparent"}
+                            barStyle={"dark-content"}
+                        />
 
                         {/* Logo */}
                         <View className="mt-10 w-60 h-20">
-                            <Image source={images.Logo} className="w-full h-full" resizeMode="contain" />
+                            <Image
+                                source={images.Logo}
+                                className="w-full h-full"
+                                resizeMode="contain"
+                            />
                         </View>
 
                         {/* Titles */}
-                        <Text className="text-3xl font-bold text-[#475569] mt-5">Welcome</Text>
+                        <Text className="text-3xl font-bold text-[#475569] mt-5">
+                            Welcome
+                        </Text>
                         <Text className="text-[#64748B] mt-1 mb-10">Create an account</Text>
 
                         {/* Inputs */}
@@ -139,15 +155,23 @@ const SignUpScreen = () => {
                                     keyboardType="email-address"
                                 />
                                 {errors.identifier && (
-                                    <Text className="text-red-500 text-sm mt-1">{errors.identifier}</Text>
+                                    <Text className="text-red-500 text-sm mt-1">
+                                        {errors.identifier}
+                                    </Text>
                                 )}
                             </View>
 
                             {/* Password */}
                             <View>
-                                <Text className="mb-2 font-semibold text-[#64748B]">Password</Text>
+                                <Text className="mb-2 font-semibold text-[#64748B]">
+                                    Password
+                                </Text>
                                 <View className="flex-row items-center border border-[#D4D3D3] rounded-lg px-4">
-                                    <Ionicons name="lock-closed-outline" size={22} color="#94A3B8" />
+                                    <Ionicons
+                                        name="lock-closed-outline"
+                                        size={22}
+                                        color="#94A3B8"
+                                    />
                                     <TextInput
                                         value={password}
                                         onChangeText={(v) => {
@@ -161,16 +185,20 @@ const SignUpScreen = () => {
                                         className="flex-1 py-4 px-2 text-black"
                                         autoCapitalize="none"
                                     />
-                                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                                    <TouchableOpacity
+                                        onPress={() => setShowPassword(!showPassword)}
+                                    >
                                         <Ionicons
-                                            name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                                            name={showPassword ? "eye-outline" : "eye-off-outline"}
                                             size={22}
                                             color="#94A3B8"
                                         />
                                     </TouchableOpacity>
                                 </View>
                                 {errors.password && (
-                                    <Text className="text-red-500 text-sm mt-1">{errors.password}</Text>
+                                    <Text className="text-red-500 text-sm mt-1">
+                                        {errors.password}
+                                    </Text>
                                 )}
                             </View>
 
@@ -180,7 +208,11 @@ const SignUpScreen = () => {
                                     Confirm Password
                                 </Text>
                                 <View className="flex-row items-center border border-[#D4D3D3] rounded-lg px-4">
-                                    <Ionicons name="lock-closed-outline" size={22} color="#94A3B8" />
+                                    <Ionicons
+                                        name="lock-closed-outline"
+                                        size={22}
+                                        color="#94A3B8"
+                                    />
                                     <TextInput
                                         value={confirmPassword}
                                         onChangeText={(v) => {
@@ -198,7 +230,9 @@ const SignUpScreen = () => {
                                         onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                                     >
                                         <Ionicons
-                                            name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
+                                            name={
+                                                showConfirmPassword ? "eye-outline" : "eye-off-outline"
+                                            }
                                             size={22}
                                             color="#94A3B8"
                                         />
@@ -216,9 +250,9 @@ const SignUpScreen = () => {
                         <View className="flex-row items-start w-full mt-4">
                             <TouchableOpacity onPress={() => setAgreeTerms(!agreeTerms)}>
                                 <Ionicons
-                                    name={agreeTerms ? 'checkbox-outline' : 'square-outline'}
+                                    name={agreeTerms ? "checkbox-outline" : "square-outline"}
                                     size={22}
-                                    color={agreeTerms ? '#2563EB' : '#94A3B8'}
+                                    color={agreeTerms ? "#2563EB" : "#94A3B8"}
                                 />
                             </TouchableOpacity>
                             <Text className="ml-2 text-[#64748B] flex-1">
@@ -226,7 +260,9 @@ const SignUpScreen = () => {
                             </Text>
                         </View>
                         {errors.terms && (
-                            <Text className="text-red-500 text-sm w-full mt-1">{errors.terms}</Text>
+                            <Text className="text-red-500 text-sm w-full mt-1">
+                                {errors.terms}
+                            </Text>
                         )}
 
                         {/* Submit */}
@@ -236,9 +272,11 @@ const SignUpScreen = () => {
                             className="w-full p-4 rounded-lg mt-10 bg-primary"
                         >
                             <Text className="text-white text-center text-lg font-semibold">
-                                {registerState.isPending ? 'Creating Account...' : 'Sign Up'}
+                                {registerState.isPending ? "Creating Account..." : "Sign Up"}
                             </Text>
                         </TouchableOpacity>
+
+                        <SocialAuth />
 
                         {/* Extra space at bottom to ensure scrolling works when keyboard is open */}
                         <View className="h-20" />

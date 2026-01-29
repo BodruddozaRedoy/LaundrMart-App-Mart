@@ -1,22 +1,24 @@
-import HeaderBackButton from '@/components/common/HeaderBackButton';
-import { useToast } from '@/components/ui/toast/ToastContext';
-import { images } from '@/constants';
-import { useUser } from '@/hooks/useUser';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React, { useState } from 'react';
+import HeaderBackButton from "@/components/common/HeaderBackButton";
+import SocialAuth from "@/components/module/auth/SocialAuth";
+import { useToast } from "@/components/ui/toast/ToastContext";
+import { images } from "@/constants";
+import { useUser } from "@/hooks/useUser";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React, { useState } from "react";
 import {
     Image,
     Keyboard,
     KeyboardAvoidingView,
     ScrollView,
+    StatusBar,
     Text,
     TextInput,
     TouchableOpacity,
     TouchableWithoutFeedback,
-    View
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type Errors = {
     identifier?: string;
@@ -24,8 +26,8 @@ type Errors = {
 };
 
 const SignInScreen = () => {
-    const [identifier, setIdentifier] = useState('');
-    const [password, setPassword] = useState('');
+    const [identifier, setIdentifier] = useState("");
+    const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<Errors>({});
 
@@ -36,8 +38,8 @@ const SignInScreen = () => {
     const validate = () => {
         const e: Errors = {};
 
-        if (!identifier) e.identifier = 'Email or phone is required';
-        if (!password) e.password = 'Password is required';
+        if (!identifier) e.identifier = "Email or phone is required";
+        if (!password) e.password = "Password is required";
 
         setErrors(e);
         return Object.keys(e).length === 0;
@@ -53,19 +55,19 @@ const SignInScreen = () => {
                 password,
             });
 
-            success('Welcome back', res.message);
-            router.replace('/(customer)/(tab)');
+            success("Welcome back", res.message);
+            router.replace("/(mart)/(tab)");
         } catch (err: any) {
             error(
-                'Login Failed',
-                err?.response?.data?.message || 'Invalid credentials'
-            );
+              "Login Failed",
+              err?.response?.data?.message || "Invalid credentials",
+          );
         }
     };
 
     /* -------------------- UI -------------------- */
     return (
-        <SafeAreaView>
+        <SafeAreaView style={{ backgroundColor: "white", flexGrow: 1 }}>
             <KeyboardAvoidingView
                 behavior="padding"
             // keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 100}
@@ -73,9 +75,10 @@ const SignInScreen = () => {
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <ScrollView
                         contentContainerStyle={{
-                            alignItems: 'center',
+                            alignItems: "center",
                             padding: 20,
                             flexGrow: 1,
+                            backgroundColor: "white",
                         }}
                         showsVerticalScrollIndicator={false}
                         keyboardShouldPersistTaps="handled"
@@ -85,6 +88,10 @@ const SignInScreen = () => {
                             <HeaderBackButton onPress={() => router.back()} />
                             <View />
             </View>
+                        <StatusBar
+                            backgroundColor={"transparent"}
+                            barStyle={"dark-content"}
+                        />
 
             {/* Logo */}
                         <View className="mt-10 w-60 h-20">
@@ -156,7 +163,7 @@ const SignInScreen = () => {
                                         onPress={() => setShowPassword(!showPassword)}
                                     >
                                         <Ionicons
-                                            name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                                            name={showPassword ? "eye-outline" : "eye-off-outline"}
                                             size={22}
                                             color="#94A3B8"
                                         />
@@ -173,7 +180,7 @@ const SignInScreen = () => {
                         {/* Forgot password */}
                         <View className="w-full items-end mt-3">
                             <TouchableOpacity
-                                onPress={() => router.push('/(auth)/forgetPassword')}
+                                onPress={() => router.push("/(auth)/forgetPassword")}
                             >
                                 <Text className="text-primary font-medium">
                                     Forgot Password?
@@ -188,24 +195,22 @@ const SignInScreen = () => {
                             className="w-full p-4 rounded-lg mt-10 bg-primary"
                         >
                             <Text className="text-white text-center text-lg font-semibold">
-                                {loginState.isPending ? 'Signing In...' : 'Sign In'}
+                                {loginState.isPending ? "Signing In..." : "Sign In"}
                             </Text>
             </TouchableOpacity>
 
                         {/* Signup */}
             <View className="flex-row mt-4">
-                            <Text className="text-[#475569]">
-                                Don’t have an account?
-                            </Text>
-                            <TouchableOpacity onPress={() => router.push('/(auth)/signUp')}>
-                                <Text className="text-primary font-semibold ml-1">
-                                    Sign Up
-                                </Text>
+                            <Text className="text-[#475569]">Don’t have an account?</Text>
+                            <TouchableOpacity onPress={() => router.push("/(auth)/signUp")}>
+                                <Text className="text-primary font-semibold ml-1">Sign Up</Text>
                             </TouchableOpacity>
             </View>
 
+                        <SocialAuth />
+
                         {/* Extra spacing for keyboard */}
-                        <View className="h-20" />
+                        <View className="h-20 bg-white" />
                     </ScrollView>
                 </TouchableWithoutFeedback>
             </KeyboardAvoidingView>

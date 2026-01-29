@@ -1,10 +1,9 @@
+import { useToast } from "@/components/ui/toast/ToastContext";
 import { useUser } from "@/hooks/useUser";
 import { Ionicons } from "@expo/vector-icons";
-import { router, type Href } from "expo-router";
-import type { ComponentProps } from "react";
-import React, { useState } from "react";
+import { Href, router } from "expo-router";
+import React, { ComponentProps, useState } from "react";
 import {
-    Dimensions,
     Image,
     ScrollView,
     StatusBar,
@@ -14,103 +13,132 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// 📌 Tablet detection
-const { width } = Dimensions.get("window");
-const isMd = width >= 768;
-const isLg = width >= 1024;
-
-// 📌 Icon scaling
-const iconSize = isLg ? 40 : isMd ? 30 : 22;
-
 type MenuItem = {
-    id: number;
+    id: number | string;
     icon: ComponentProps<typeof Ionicons>["name"];
     title: string;
     link: Href;
 };
 
+/** ---- Main menu items ---- */
+const menuItems: MenuItem[] = [
+    {
+        id: 1,
+        icon: "person-outline",
+        title: "Laundry Info",
+        link: "/(mart)/more/laundryInfo" as Href,
+    },
+    {
+        id: 2,
+        icon: "settings-outline",
+        title: "Settings",
+        link: "/(mart)/more/settings" as Href,
+    },
+    {
+        id: 3,
+        icon: "chatbubble-outline",
+        title: "Support Chat",
+        link: "/(mart)/more/supportChat" as Href,
+    },
+    {
+        id: 4,
+        icon: "help-circle-outline",
+        title: "FAQ",
+        link: "/(mart)/more/faq" as Href,
+    },
+    {
+        id: 5,
+        icon: "help-circle-outline",
+        title: "Payment Options",
+        link: "/(mart)/more/payment" as Href,
+    },
+];
+
+/** ---- Legal submenu items ---- */
+const legalItems: MenuItem[] = [
+    {
+        id: "legal-1",
+        icon: "document-text-outline",
+        title: "Privacy & Policy",
+        link: "/(mart)/more/privacyPolicy" as Href,
+    },
+    {
+        id: "legal-2",
+        icon: "document-outline",
+        title: "Terms & Conditions",
+        link: "/(mart)/more/termsConditions" as Href,
+    },
+    {
+        id: "legal-3",
+        icon: "shield-checkmark-outline",
+        title: "Laundry Protection",
+        link: "/(mart)/more/laundryProtection" as Href,
+    },
+];
+
 const MoreScreen = () => {
     const [showLegal, setShowLegal] = useState(false);
-    const { logout } = useUser()
+    const { customerProfile, logout } = useUser()
+    const { success } = useToast()
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+
 
     const handleLogout = async () => {
         try {
             await logout()
             router.replace("/(auth)/welcome")
+            success("Log out successfully!")
         } catch (err) {
             console.log(err)
         }
     }
 
-    const menuItems: MenuItem[] = [
-        { id: 1, icon: "person-outline", title: "Laundry Info", link: "/(mart)/more/laundryInfo" },
-        { id: 2, icon: "settings-outline", title: "Settings", link: "/(mart)/more/settings" },
-        { id: 6, icon: "help-circle-outline", title: "Support Chat", link: "/(mart)/more/supportChat" },
-        { id: 7, icon: "help-circle-outline", title: "FAQ", link: "/(mart)/more/faq" },
-    ];
 
-    const legalItems: MenuItem[] = [
-        { id: 3, icon: "document-text-outline", title: "Privacy & Policy", link: "/(mart)/more/privacyPolicy" },
-        { id: 4, icon: "document-outline", title: "Terms & Conditions", link: "/(mart)/more/termsConditions" },
-        { id: 5, icon: "shield-checkmark-outline", title: "Laundry Protection", link: "/(mart)/more/laundryProtection" },
-    ];
 
     return (
         <SafeAreaView className="flex-1 bg-white">
             <StatusBar barStyle={"dark-content"} />
 
             {/* Header */}
-            <View className="items-center mt-10 md:mt-16 lg:mt-20 mb-4">
-                <View
-                    className="
-                        w-11/12 bg-white shadow-sm border border-primary rounded-2xl p-4 
-                        md:p-6 lg:p-8 md:rounded-3xl lg:rounded-[32px] 
-                        flex-row items-center
-                    "
-                >
+            <View className="items-center mt-10 mb-4">
+                <View className="w-11/12 bg-white shadow-sm border border-primary rounded-2xl p-4 flex-row items-center">
                     <Image
                         source={{
-                            uri: "https://t4.ftcdn.net/jpg/00/91/13/83/360_F_91138343_2rGUY65Ew7OAkYZ12sltkN0e1ngO9Vx2.jpg",
+                            uri: customerProfile?.image !== null ? customerProfile?.image : "https://img.icons8.com/?size=100&id=7819&format=png&color=000000",
                         }}
-                        style={{
-                            width: isLg ? 90 : isMd ? 70 : 64,
-                            height: isLg ? 90 : isMd ? 70 : 64,
-                        }}
-                        className="rounded-full mr-4"
+                        className="w-16 h-16 rounded-full mr-4"
                     />
                     <View className="flex-1">
-                        <Text className="text-xl md:text-3xl lg:text-4xl font-bold text-gray-800">
-                            Mart User
+                        <Text className="text-xl font-bold text-gray-800">
+                            {customerProfile?.full_name || "Not set yet"}
                         </Text>
-                        <Text className="text-sm md:text-xl lg:text-2xl text-gray-500">
-                            bodruddozaredoy@gmail.com
+                        <Text className="text-sm text-gray-500">
+                            {customerProfile?.email}
                         </Text>
                     </View>
                 </View>
             </View>
 
-            {/* Menu */}
+            {/* Menu Section */}
             <ScrollView
                 className="flex-1 w-11/12 mx-auto"
                 showsVerticalScrollIndicator={false}
             >
-                {/* Main menu items */}
+                {/* Main items */}
                 {menuItems.map((item) => (
                     <TouchableOpacity
-                        onPress={() => router.push(item.link)}
                         key={item.id}
-                        className="flex-row items-center justify-between py-4 md:py-6 lg:py-8 border-b border-gray-100"
+                        onPress={() => router.push(item.link)}
+                        className="flex-row items-center justify-between py-4 border-b border-gray-100"
                     >
                         <View className="flex-row items-center">
-                            <Ionicons name={item.icon} size={iconSize} color="#444" />
-                            <Text className="ml-3 text-base md:text-2xl lg:text-3xl text-gray-800">
-                                {item.title}
-                            </Text>
+                            <Ionicons name={item.icon} size={22} color="#444" />
+                            <Text className="ml-3 text-base text-gray-800">{item.title}</Text>
                         </View>
-
                         <Ionicons
                             name="chevron-forward-outline"
-                            size={isLg ? 34 : isMd ? 26 : 18}
+                            size={18}
                             color="#999"
                         />
                     </TouchableOpacity>
@@ -119,18 +147,15 @@ const MoreScreen = () => {
                 {/* Legal Accordion */}
                 <TouchableOpacity
                     onPress={() => setShowLegal(!showLegal)}
-                    className="flex-row items-center justify-between py-4 md:py-6 lg:py-8 border-b border-gray-100"
+                    className="flex-row items-center justify-between py-4 border-b border-gray-100"
                 >
                     <View className="flex-row items-center">
-                        <Ionicons name="library-outline" size={iconSize} color="#444" />
-                        <Text className="ml-3 text-base md:text-2xl lg:text-3xl text-gray-800">
-                            Legal
-                        </Text>
+                        <Ionicons name="library-outline" size={22} color="#444" />
+                        <Text className="ml-3 text-base text-gray-800">Legal</Text>
                     </View>
-
                     <Ionicons
                         name={showLegal ? "chevron-up-outline" : "chevron-down-outline"}
-                        size={isLg ? 34 : isMd ? 26 : 18}
+                        size={18}
                         color="#999"
                     />
                 </TouchableOpacity>
@@ -141,44 +166,88 @@ const MoreScreen = () => {
                         <TouchableOpacity
                             key={sub.id}
                             onPress={() => router.push(sub.link)}
-                            className="flex-row items-center justify-between py-3 md:py-5 lg:py-6"
+                            className="flex-row items-center justify-between py-3"
                         >
                             <View className="flex-row items-center">
-                                <Ionicons
-                                    name={sub.icon}
-                                    size={isLg ? 34 : isMd ? 26 : 20}
-                                    color="#666"
-                                />
-                                <Text className="ml-3 text-sm md:text-xl lg:text-2xl text-gray-700">
-                                    {sub.title}
-                                </Text>
+                                <Ionicons name={sub.icon} size={20} color="#666" />
+                                <Text className="ml-3 text-sm text-gray-700">{sub.title}</Text>
                             </View>
                             <Ionicons
                                 name="chevron-forward-outline"
-                                size={isLg ? 30 : isMd ? 22 : 16}
+                                size={16}
                                 color="#aaa"
                             />
                         </TouchableOpacity>
                     ))}
 
-                {/* Log Out */}
+                {/* Log Out at bottom */}
                 <TouchableOpacity
-                    onPress={handleLogout}
-                    className="flex-row items-center justify-between py-4 md:py-6 lg:py-8 border-b border-gray-100 mt-2"
+                    onPress={() => setShowLogoutModal(true)}
+                    className="flex-row items-center justify-between py-4 border-b border-gray-100 mt-2"
                 >
                     <View className="flex-row items-center">
-                        <Ionicons name="log-out-outline" size={iconSize} color="#444" />
-                        <Text className="ml-3 text-base md:text-2xl lg:text-3xl text-gray-800">
-                            Log Out
-                        </Text>
+                        <Ionicons name="log-out-outline" size={22} color="#444" />
+                        <Text className="ml-3 text-base text-gray-800">Log Out</Text>
                     </View>
                     <Ionicons
                         name="chevron-forward-outline"
-                        size={isLg ? 34 : isMd ? 26 : 18}
+                        size={18}
                         color="#999"
                     />
                 </TouchableOpacity>
             </ScrollView>
+
+            {/* Referral Section */}
+            <TouchableOpacity
+                onPress={() => router.push("/more/inviteFriends" as Href)}
+                className="bg-[#EAF6FF] p-4 rounded-xl mx-4 my-4 flex-row items-center justify-center"
+            >
+                <Ionicons name="gift-outline" size={20} color="#007AFF" />
+                <Text className="ml-2 text-primary font-medium">
+                    Share LaundrMart: Give $20, Get $20
+                </Text>
+            </TouchableOpacity>
+
+            {/* Logout Confirmation Modal */}
+            {showLogoutModal && (
+                <View className="absolute inset-0 bg-black/40 justify-center items-center">
+                    <View className="w-4/5 bg-white rounded-2xl p-5">
+                        <Text className="text-lg font-semibold text-gray-800 text-center mb-2">
+                            Log out
+                        </Text>
+
+                        <Text className="text-sm text-gray-600 text-center mb-6">
+                            Are you sure you want to log out?
+                        </Text>
+
+                        <View className="flex-row justify-between">
+                            {/* Cancel */}
+                            <TouchableOpacity
+                                onPress={() => setShowLogoutModal(false)}
+                                className="flex-1 py-3 mr-2 rounded-xl border border-gray-200"
+                            >
+                                <Text className="text-center text-gray-700 font-medium">
+                                    Cancel
+                                </Text>
+                            </TouchableOpacity>
+
+                            {/* Confirm */}
+                            <TouchableOpacity
+                                onPress={async () => {
+                                    setShowLogoutModal(false);
+                                    await handleLogout();
+                                }}
+                                className="flex-1 py-3 ml-2 rounded-xl bg-red-500"
+                            >
+                                <Text className="text-center text-white font-medium">
+                                    Log Out
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            )}
+
         </SafeAreaView>
     );
 };
